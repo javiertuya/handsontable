@@ -7216,11 +7216,15 @@ BaseEditor.prototype.prepare = function(row, col, prop, td, originalValue, cellP
   this.prop = prop;
   this.originalValue = originalValue;
   this.cellProperties = cellProperties;
+  
+///// patch 2 for SPR 27107 with Edge
+try {
   if (this.instance.view.isMouseDown() && document.activeElement && document.activeElement !== document.body) {
     document.activeElement.blur();
   } else if (!document.activeElement) {
     document.body.focus();
   }
+} catch (e) { console.log("patch 2 for SPR 27107 with Edge"); }
   this.state = Handsontable.EditorState.VIRGIN;
 };
 BaseEditor.prototype.extend = function() {
@@ -19865,9 +19869,12 @@ function TableView(instance) {
       instance.selection.finish();
     }
     isMouseDown = false;
+    ///// patch 1 for SPR 27107 with Edge
+    try {
     if (isOutsideInput(document.activeElement)) {
       instance.unlisten();
     }
+    } catch (e) { console.log("patch 1 for SPR 27107 with Edge"); }
   });
   this.eventManager.addEventListener(document.documentElement, 'mousedown', function(event) {
     var next = event.target;
@@ -20280,7 +20287,13 @@ TableView.prototype.updateCellHeader = function(element, index, content) {
   if (index > -1) {
     fastInnerHTML(element, content(index));
   } else {
-    fastInnerText(element, String.fromCharCode(160));
+    //fastInnerText(element, String.fromCharCode(160));
+    //J Tuya, May 2016: anyade una propiedad cornerHeaderText que si se define en la handsontable
+    //causa que aqui se ponga el texto que define en vez de un blanco
+    if (this.settings.cornerHeaderText==undefined)
+      fastInnerText(element, String.fromCharCode(160));
+    else
+      fastInnerText(element, this.settings.cornerHeaderText);
     addClass(element, 'cornerHeader');
   }
 };
